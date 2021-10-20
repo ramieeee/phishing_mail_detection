@@ -6,12 +6,12 @@ This repository shows the system construction part of the project conducted duri
 
 Flow
 
-<img src="./flow.png", width="800">
-
+![image](flow.png)
 
 
 
 Tools
+
 1. CentOS7
 2. Sendmail
 3. Python 3.6
