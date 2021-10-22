@@ -1,5 +1,3 @@
-# for out project we customized the sample.py file in pymilter pkg.
-
 from __future__ import print_function
 import feature_extraction as fe # our own feature module
 
@@ -27,6 +25,8 @@ import joblib
 from sklearn.metrics import accuracy_score
 from sklearn import ensemble
 from sklearn.multioutput import MultiOutputClassifier
+import warnings
+warnings.filterwarnings('ignore')
 
 #import syslog
 
@@ -53,7 +53,6 @@ class myMilter(Milter.Milter):
   # multiple messages can be received on a single connection
   # envfrom (MAIL FROM in the SMTP protocol) seems to mark the start
   # of each message.
-
   @Milter.symlist('{auth_authen}')
   @Milter.noreply
   def envfrom(self,f,*str):
@@ -108,34 +107,37 @@ class myMilter(Milter.Milter):
       self.fp.write(chunk)	# IOError causes TEMPFAIL in milter
       self.bodysize += len(chunk)
 
-      # url extraction from body
+    # url extraction with decoding
     text = chunk.decode('utf-8').strip()
     urls = re.findall(r'(https?:\/\/[^\s]+)', text)
     print('******')
-    print('url list: %s\n' %urls)
+    print('url list: %s' %urls)
+    print('******')
 
       # url check(get request 200 -> ok, else: error)
     for url in urls:
-      try:
-        res = requests.get(url, headers=header, timeout=2)
-        print("-> %s: Status %s" %(url, res))
+#     try
+      res = requests.get(url, headers=header, timeout=2)
+      print("-> %s: Status %s\n" %(url, res))
         
         # feature extraction
-        feature = fe.FeatureExtraction(url)
-        feature_score = np.array(feature.run_process())
-        print('feature_score')
-        print(feature_score)
+      feature = fe.FeatureExtraction(url)
+      feature_score = np.array([feature.run_process()])
+      print('Feature_score')
+      print(feature_score)
+      print()
 
         # call model and integrate feature_score
-        model = joblib.load('./phishing_model.pkl')
-        predictions = model.predict(feature_score)
-        accuracy = 100.0 * accuracy_score(feature_score, predictions)
-        print(accuracy)
-
-      except:
-        print('-> %s: Status <url not found error>' %url)
-        pass
+      model = joblib.load('./phishing_model.pkl')
+      prediction = model.predict(feature_score)
+      print('Prediction result: %d\n\n' %int(prediction))
+      if int(prediction) == -1:
+        self.isspam = True
+        #break
+#      except:
+#        pass
     print('******')
+    
     return Milter.CONTINUE
 
   def _headerChange(self,msg,name,value):
@@ -149,8 +151,8 @@ class myMilter(Milter.Milter):
 
   def eom(self):
     if not self.fp: return Milter.ACCEPT
-#    if self.isspam == True:
-#      self.addheader('subject', '[PHISHING]'+self.subject, idx=-1)
+    if self.isspam == True:
+      self.addheader('subject', '[PHISHING]'+self.subject, idx=-1)
     self.fp.seek(0)
     msg = mime.message_from_file(self.fp)
     msg.headerchange = self._headerChange
