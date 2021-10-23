@@ -116,26 +116,27 @@ class myMilter(Milter.Milter):
 
       # url check(get request 200 -> ok, else: error)
     for url in urls:
-#     try
-      res = requests.get(url, headers=header, timeout=2)
-      print("-> %s: Status %s\n" %(url, res))
+      try:
+        res = requests.get(url, headers=header, timeout=1)
+        print("-> %s: Status %s\n" %(url, res))
         
         # feature extraction
-      feature = fe.FeatureExtraction(url)
-      feature_score = np.array([feature.run_process()])
-      print('Feature_score')
-      print(feature_score)
-      print()
+        feature = fe.FeatureExtraction(url)
+        feature_score = np.array([feature.run_process()])
+        print('Feature_score')
+        print(feature_score)
+        print()
 
         # call model and integrate feature_score
-      model = joblib.load('./phishing_model.pkl')
-      prediction = model.predict(feature_score)
-      print('Prediction result: %d\n\n' %int(prediction))
-      if int(prediction) == -1:
-        self.isspam = True
-        #break
-#      except:
-#        pass
+        model = joblib.load('./phishing_model.pkl')
+        prediction = model.predict(feature_score)
+        print('Prediction result: %d\n\n' %int(prediction))
+        if int(prediction) == -1:
+          self.isspam = True
+          #break
+      except:
+        print('url not found or timed out')
+        pass
     print('******')
     
     return Milter.CONTINUE
@@ -200,7 +201,7 @@ O InputMailFilters=pythonfilter
 Xpythonfilter,        S=local:%s
 
 See the sendmail README for libmilter.
-sample  milter startup""" % socketname)
+Milter startup""" % socketname)
   sys.stdout.flush()
   Milter.runmilter("pythonfilter",socketname,240)
   print("sample milter shutdown")
