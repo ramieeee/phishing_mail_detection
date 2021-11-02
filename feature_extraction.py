@@ -207,13 +207,13 @@ class FeatureExtraction:
         total_date = (expiration_date - updated_date).days
         return total_date
     
-    #09. ALexa 랭킹 기준으로 탐지
+    #09. Alexa 랭킹 기준으로 탐지
     def check_alexa_rank(self):
         try:
             domain = self.get_domain(self.url)
             rank_str = BeautifulSoup(urllib.request.urlopen("http://data.alexa.com/data?cli=10&dat=s&url="+ domain).read(), 'xml').find("REACH")['RANK']
             rank_str1 = int(rank_str)
-            if rank_str1 > 100000:
+            if rank_str1 < 100000:
                 feature9 = 1
             else:
                 feature9 = -1
